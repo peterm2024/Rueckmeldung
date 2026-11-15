@@ -9,6 +9,7 @@ Werte als JSON - damit ist der Kopf zugleich gültiges YAML) und der Notiz darun
 und heißen wie die Datei plus „_1.png“, „_2.png“ ...
 """
 import json
+import math
 import os
 import re
 
@@ -137,3 +138,97 @@ def lies(pfad):
                 except ValueError:
                     kopf[k.strip()] = v
     return kopf, notiz.strip()
+
+
+# --- Bildansicht und Markierungen (Geometrie ohne Pillow und ohne Fenster) ---
+
+MARKIERUNGEN = ("Rahmen", "Pfeil", "Schwärzen")
+
+
+class Ansicht:
+    """Ausschnitt eines Bildes auf einer Zeichenfläche: Maßstab plus die Bildkoordinate der linken oberen Ecke.
+    Zoomen hält den Bildpunkt unter der Maus fest; einpassen zeigt das ganze Bild, höchstens 1:1."""
+
+    MAX_ZOOM = 8.0
+
+    def __init__(self, bild_b, bild_h):
+        self.bild_b, self.bild_h = bild_b, bild_h
+        self.massstab, self.x0, self.y0 = 1.0, 0.0, 0.0
+        self.flaeche = (1, 1)
+
+    def passend(self):
+        b, h = self.flaeche
+        return min(b / self.bild_b, h / self.bild_h, 1.0)
+
+    def einpassen(self, flaeche_b, flaeche_h):
+        self.flaeche = (max(1, flaeche_b), max(1, flaeche_h))
+        self.massstab = self.passend()
+        self._begrenze()
+
+    def neue_flaeche(self, flaeche_b, flaeche_h):
+        """Fenstergröße geändert: war das Bild eingepasst, bleibt es eingepasst, sonst bleibt der Maßstab."""
+        eingepasst = abs(self.massstab - self.passend()) < 1e-9
+        self.flaeche = (max(1, flaeche_b), max(1, flaeche_h))
+        if eingepasst:
+            self.massstab = self.passend()
+        self._begrenze()
+
+    def zoome(self, faktor, cx, cy):
+        """Um faktor zoomen, der Bildpunkt unter (cx, cy) auf der Fläche bleibt stehen."""
+        bx, by = self.zu_bild(cx, cy)
+        self.massstab = min(self.MAX_ZOOM, max(self.passend(), self.massstab * faktor))
+        self.x0, self.y0 = bx - cx / self.massstab, by - cy / self.massstab
+        self._begrenze()
+
+    def verschiebe(self, dx, dy):
+        """Um (dx, dy) Flächen-Pixel verschieben (Ziehen mit der Maus)."""
+        self.x0 -= dx / self.massstab
+        self.y0 -= dy / self.massstab
+        self._begrenze()
+
+    def _begrenze(self):
+        """Ist das Bild kleiner als die Fläche, steht es mittig; sonst kein leerer Rand neben dem Bild."""
+        for achse, bild, flaeche in (("x0", self.bild_b, self.flaeche[0]), ("y0", self.bild_h, self.flaeche[1])):
+            sichtbar = flaeche / self.massstab
+            if sichtbar >= bild:
+                setattr(self, achse, -(sichtbar - bild) / 2)
+            else:
+                setattr(self, achse, min(max(getattr(self, achse), 0.0), bild - sichtbar))
+
+    def zu_bild(self, cx, cy):
+        return self.x0 + cx / self.massstab, self.y0 + cy / self.massstab
+
+    def zu_flaeche(self, bx, by):
+        return (bx - self.x0) * self.massstab, (by - self.y0) * self.massstab
+
+    def ausschnitt(self):
+        """Sichtbarer Bildausschnitt (links, oben, rechts, unten) in ganzen Bildpixeln, auf das Bild begrenzt,
+        und wohin seine linke obere Ecke auf der Fläche fällt."""
+        b, h = self.flaeche
+        l, o = max(0, int(self.x0)), max(0, int(self.y0))
+        r = min(self.bild_b, int(self.x0 + b / self.massstab) + 1)
+        u = min(self.bild_h, int(self.y0 + h / self.massstab) + 1)
+        return (l, o, r, u), self.zu_flaeche(l, o)
+
+
+def linienbreite(bild_b, bild_h):
+    """Strichstärke für Rahmen und Pfeil im gespeicherten Bild: gut sichtbar, auch in großen Aufnahmen."""
+    return max(3, round(max(bild_b, bild_h) / 450))
+
+
+def pfeilspitze(x0, y0, x1, y1, laenge):
+    """Drei Punkte der Pfeilspitze an (x1, y1), Länge laenge, Öffnung etwa 50°. Bei einem Pfeil, der kürzer ist als
+    die Spitze, wird die Spitze auf die halbe Pfeillänge gekürzt."""
+    dx, dy = x1 - x0, y1 - y0
+    lang = math.hypot(dx, dy)
+    if lang < 1e-9:
+        return [(x1, y1)] * 3
+    laenge = min(laenge, lang / 2) if lang < 2 * laenge else laenge
+    ux, uy = dx / lang, dy / lang
+    bx, by = x1 - ux * laenge, y1 - uy * laenge                  # Mitte der Grundlinie
+    halb = laenge * 0.47
+    return [(x1, y1), (bx - uy * halb, by + ux * halb), (bx + uy * halb, by - ux * halb)]
+
+
+def normiere_rechteck(x0, y0, x1, y1):
+    return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)

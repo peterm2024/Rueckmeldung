@@ -60,6 +60,38 @@ try:
     f.event_generate("<Alt-Key-2>")
     pumpe(0.2)
     print("Art nach Alt+2:", f.art.get())
+
+    # Bild bearbeiten: Markierungen per Maus-Ereignis auf der Fläche (Bildkoordinaten -> Fläche umrechnen)
+    ed = f.editor
+    pumpe(0.3)
+
+    def ziehe(art, x0, y0, x1, y1):
+        ed.werkzeug.set(art)
+        a0, b0 = ed.ansicht.zu_flaeche(x0, y0)
+        a1, b1 = ed.ansicht.zu_flaeche(x1, y1)
+        ed.flaeche.event_generate("<ButtonPress-1>", x=int(a0), y=int(b0))
+        ed.flaeche.event_generate("<B1-Motion>", x=int((a0 + a1) / 2), y=int((b0 + b1) / 2))
+        ed.flaeche.event_generate("<B1-Motion>", x=int(a1), y=int(b1))
+        ed.flaeche.event_generate("<ButtonRelease-1>", x=int(a1), y=int(b1))
+        pumpe(0.1)
+
+    vorher = ed.ansicht.massstab
+    ziehe("Rahmen", 50, 50, 250, 200)
+    ziehe("Pfeil", 20, 240, 300, 240)
+    ziehe("Schwärzen", 300, 20, 380, 80)
+    ziehe("Schwärzen", 10, 10, 11, 11)                      # nur Klick, keine Markierung
+    ziehe("Rahmen", 100, 100, 150, 150)
+    ed.rueckgaengig()
+    print("Markierungen (Klick ignoriert, letzte zurückgenommen):", [m[0] for m in ed.markierungen])
+    a, b = ed.ansicht.zu_flaeche(200, 140)
+    ed.flaeche.event_generate("<MouseWheel>", x=int(a), y=int(b), delta=240)
+    pumpe(0.2)
+    print("Mausrad zoomt:", round(vorher, 3), "->", round(ed.ansicht.massstab, 3),
+          "| Punkt bleibt:", [round(v) for v in ed.ansicht.zu_bild(int(a), int(b))])
+    ed.einpassen()
+    pumpe(0.1)
+    print("Einpassen:", round(ed.ansicht.massstab, 3) == round(vorher, 3))
+
     f.notiz.event_generate("<Control-Return>")
     pumpe(0.3)
     print("Fenster zu:", app.fenster is None, "| gespeichert:", len(app.gespeichert))
@@ -67,6 +99,11 @@ try:
     print("Kopf:", {k: kopf.get(k) for k in ("projekt", "art", "status", "programm", "bilder", "bild_fuer_ki")})
     print("Notiz:", notiz)
     print("Dateien:", sorted(os.listdir(os.path.join(ablage, "Unbekannt"))))
+    from PIL import Image
+    gespeichert = Image.open(os.path.join(ablage, "Unbekannt", kopf["bilder"][0])).convert("RGB")
+    print("Eingebrannt - Rahmen rot:", gespeichert.getpixel((51, 120)), "| Innen magenta:", gespeichert.getpixel((150, 120)),
+          "| Pfeil rot:", gespeichert.getpixel((150, 240)), "| geschwärzt:", gespeichert.getpixel((340, 50)),
+          "| zurückgenommen (125,100) nicht rot:", gespeichert.getpixel((125, 101)))
 
     app.ausgeloest(ziel_hwnd)
     f = app.fenster

@@ -117,21 +117,23 @@ class Erfassung(tk.Toplevel):
         ttk.Button(knoepfe, text="Verwerfen (Esc)", command=self.verwerfen).pack(side=tk.RIGHT)
         ttk.Button(knoepfe, text="Speichern (Strg+Enter)", command=self.speichern).pack(side=tk.RIGHT, padx=px(6))
 
+        self.notiz = tk.Text(rand, width=64, height=4, wrap=tk.WORD, undo=True, font="TkDefaultFont")
+        self.notiz.pack(side=tk.BOTTOM, fill=tk.X, pady=(px(6), 0))
+
         kopf = titel or "(kein Fenster erkannt)"
         if programm:
             kopf += f"   —   {programm}"
         ttk.Label(rand, text=kopf if len(kopf) <= 110 else kopf[:107] + "...").pack(side=tk.TOP, anchor=tk.W)
 
         self.mit_bild = tk.BooleanVar(value=bild is not None)
-        self._vorschau = None
-        if bild is not None:
-            from PIL import ImageTk
-            klein = bild.copy()
-            klein.thumbnail((px(560), px(340)))
-            self._vorschau = ImageTk.PhotoImage(klein, master=self)
-            ttk.Label(rand, image=self._vorschau, relief=tk.SOLID, borderwidth=1).pack(side=tk.TOP, pady=px(6))
         bildzeile = ttk.Frame(rand)
-        bildzeile.pack(side=tk.TOP, fill=tk.X)
+        bildzeile.pack(side=tk.BOTTOM, fill=tk.X, pady=(px(6), 0))
+        self.editor = None
+        if bild is not None:
+            b = min(px(900), int(self.winfo_screenwidth() * 0.7))
+            h = min(px(520), int(self.winfo_screenheight() * 0.55))
+            self.editor = BildEditor(rand, bild, px, b, h)
+            self.editor.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(px(6), 0))
         ttk.Checkbutton(bildzeile, text=f"Bild anhängen ({bild.width} × {bild.height})" if bild is not None
                         else "Kein Bild (Fenster nicht aufnehmbar)", variable=self.mit_bild,
                         state=tk.NORMAL if bild is not None else tk.DISABLED).pack(side=tk.LEFT)
@@ -139,9 +141,6 @@ class Erfassung(tk.Toplevel):
         for i, a in enumerate(reversed(kern.ARTEN)):
             ttk.Radiobutton(bildzeile, text=f"{a} (Alt+{len(kern.ARTEN) - i})", value=a,
                             variable=self.art).pack(side=tk.RIGHT, padx=(px(6), 0))
-
-        self.notiz = tk.Text(rand, width=64, height=5, wrap=tk.WORD, undo=True)
-        self.notiz.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(px(6), 0))
 
         self.bind("<Control-Return>", lambda e: (self.speichern(), "break")[1])
         self.notiz.bind("<Control-Return>", lambda e: (self.speichern(), "break")[1])
@@ -174,7 +173,7 @@ class Erfassung(tk.Toplevel):
 
     def speichern(self):
         text = self.notiz.get("1.0", tk.END).strip()
-        bild = self.bild if self.mit_bild.get() else None
+        bild = self.editor.ergebnis() if self.editor is not None and self.mit_bild.get() else None
         if not text and bild is None:
             self.schliessen()
             return
@@ -186,8 +185,8 @@ class Erfassung(tk.Toplevel):
         self.schliessen()
 
     def verwerfen(self):
-        if self.notiz.get("1.0", tk.END).strip() and not messagebox.askyesno(
-                "Rückmeldung", "Die Notiz verwerfen?", parent=self):
+        gemacht = self.notiz.get("1.0", tk.END).strip() or (self.editor is not None and self.editor.markierungen)
+        if gemacht and not messagebox.askyesno("Rückmeldung", "Notiz und Markierungen verwerfen?", parent=self):
             self.notiz.focus_set()
             return
         self.schliessen()
@@ -196,6 +195,153 @@ class Erfassung(tk.Toplevel):
         self.app.fenster = None
         self.destroy()
         win.in_den_vordergrund(self.vorher)                     # zurück ins getestete Programm
+
+
+class BildEditor(ttk.Frame):
+    """Aufnahme mit Zoom (Mausrad, um die Maus herum), Verschieben (rechte oder mittlere Taste ziehen) und
+    Markierungen (linke Taste ziehen: Rahmen, Pfeil oder Schwärzen). Die Markierungen liegen in Bildpixeln vor und
+    werden erst beim Speichern in voller Auflösung eingebrannt (rueckmeldung_bild)."""
+
+    def __init__(self, eltern, bild, px, breite, hoehe):
+        super().__init__(eltern)
+        self.bild = bild.convert("RGB")
+        self.px = px
+        self.markierungen = []                                   # [(art, x0, y0, x1, y1)] in Bildpixeln
+        self.ansicht = kern.Ansicht(*self.bild.size)
+        self._foto = None
+        self._geplant = None
+        self._ziehen = None                                      # (art, Bild-x, Bild-y, Canvas-Element) beim Zeichnen
+        self._schieben = None                                    # letzte Mausposition beim Verschieben
+
+        leiste = ttk.Frame(self)
+        leiste.pack(side=tk.TOP, fill=tk.X)
+        self.werkzeug = tk.StringVar(value=kern.MARKIERUNGEN[0])
+        for art, zeichen in zip(kern.MARKIERUNGEN, ("▭", "➜", "■")):
+            ttk.Radiobutton(leiste, text=f"{zeichen} {art}", value=art, variable=self.werkzeug).pack(
+                side=tk.LEFT, padx=(0, px(10)))
+        ttk.Button(leiste, text="Rückgängig (Strg+Z)", command=self.rueckgaengig).pack(side=tk.LEFT, padx=(px(6), 0))
+        ttk.Button(leiste, text="Einpassen", command=self.einpassen).pack(side=tk.LEFT, padx=(px(6), 0))
+        self.zoom_text = ttk.Label(leiste, foreground="#666666")
+        self.zoom_text.pack(side=tk.RIGHT)
+
+        self.flaeche = tk.Canvas(self, width=breite, height=hoehe, background="#7a7a7a", highlightthickness=0,
+                                 cursor="crosshair")
+        self.flaeche.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(px(4), 0))
+        self.ansicht.einpassen(breite, hoehe)
+
+        f = self.flaeche
+        f.bind("<Configure>", self._groesse)
+        f.bind("<MouseWheel>", self._rad)
+        f.bind("<ButtonPress-1>", self._zeichnen_start)
+        f.bind("<B1-Motion>", self._zeichnen_weiter)
+        f.bind("<ButtonRelease-1>", self._zeichnen_ende)
+        for taste in (2, 3):
+            f.bind(f"<ButtonPress-{taste}>", self._schieben_start)
+            f.bind(f"<B{taste}-Motion>", self._schieben_weiter)
+        f.bind("<Control-z>", lambda e: (self.rueckgaengig(), "break")[1])
+        self._planen()
+
+    # --- Darstellung ---
+
+    def _planen(self):
+        """Neu zeichnen, aber höchstens einmal je Leerlauf - Rad und Ziehen feuern viele Ereignisse."""
+        if self._geplant is None:
+            self._geplant = self.after_idle(self._zeichnen)
+
+    def _zeichnen(self):
+        from PIL import Image, ImageTk
+        self._geplant = None
+        f, a = self.flaeche, self.ansicht
+        f.delete("bild", "mark")
+        (l, o, r, u), (fx, fy) = a.ausschnitt()
+        if r > l and u > o:
+            ziel = (max(1, round((r - l) * a.massstab)), max(1, round((u - o) * a.massstab)))
+            verfahren = Image.Resampling.NEAREST if a.massstab >= 2 else Image.Resampling.BILINEAR
+            teil = self.bild.crop((l, o, r, u)).resize(ziel, verfahren)
+            self._foto = ImageTk.PhotoImage(teil, master=self)
+            f.create_image(round(fx), round(fy), image=self._foto, anchor=tk.NW, tags="bild")
+        for m in self.markierungen:
+            self._zeichne_markierung(*m)
+        self.zoom_text.configure(text=f"{a.massstab * 100:.0f} %   ·   Rad: Zoom   ·   rechte Taste: verschieben")
+
+    def _zeichne_markierung(self, art, x0, y0, x1, y1, element=None):
+        """Markierung (Bildkoordinaten) auf die Fläche zeichnen bzw. ein vorhandenes Element nachführen."""
+        a0, b0 = self.ansicht.zu_flaeche(x0, y0)
+        a1, b1 = self.ansicht.zu_flaeche(x1, y1)
+        f = self.flaeche
+        if element is not None:
+            f.coords(element, a0, b0, a1, b1)
+            return element
+        breite = max(2, round(kern.linienbreite(*self.bild.size) * self.ansicht.massstab))
+        if art == "Schwärzen":
+            return f.create_rectangle(a0, b0, a1, b1, fill="black", outline="black", tags="mark")
+        if art == "Rahmen":
+            return f.create_rectangle(a0, b0, a1, b1, outline="#e61e1e", width=breite, tags="mark")
+        spitze = breite * 5
+        return f.create_line(a0, b0, a1, b1, fill="#e61e1e", width=breite, arrow=tk.LAST,
+                             arrowshape=(spitze, spitze, spitze * 0.47), tags="mark")
+
+    def _groesse(self, ereignis):
+        self.ansicht.neue_flaeche(ereignis.width, ereignis.height)
+        self._planen()
+
+    # --- Bedienung ---
+
+    def _rad(self, ereignis):
+        self.ansicht.zoome(1.25 ** (ereignis.delta / 120), ereignis.x, ereignis.y)
+        self._planen()
+
+    def einpassen(self):
+        self.ansicht.einpassen(self.flaeche.winfo_width(), self.flaeche.winfo_height())
+        self._planen()
+
+    def _schieben_start(self, ereignis):
+        self._schieben = (ereignis.x, ereignis.y)
+
+    def _schieben_weiter(self, ereignis):
+        if self._schieben:
+            self.ansicht.verschiebe(ereignis.x - self._schieben[0], ereignis.y - self._schieben[1])
+            self._schieben = (ereignis.x, ereignis.y)
+            self._planen()
+
+    def _zeichnen_start(self, ereignis):
+        self.flaeche.focus_set()                                 # damit Strg+Z hier rückgängig macht
+        bx, by = self.ansicht.zu_bild(ereignis.x, ereignis.y)
+        art = self.werkzeug.get()
+        self._ziehen = (art, bx, by, self._zeichne_markierung(art, bx, by, bx, by), ereignis.x, ereignis.y)
+
+    def _zeichnen_weiter(self, ereignis):
+        if self._ziehen:
+            art, bx, by, element, _, _ = self._ziehen
+            self._zeichne_markierung(art, bx, by, *self._begrenzt(ereignis), element=element)
+
+    def _zeichnen_ende(self, ereignis):
+        if not self._ziehen:
+            return
+        art, bx, by, element, sx, sy = self._ziehen
+        self._ziehen = None
+        if abs(ereignis.x - sx) < self.px(5) and abs(ereignis.y - sy) < self.px(5):
+            self.flaeche.delete(element)                         # nur geklickt, nicht gezogen
+            return
+        self.markierungen.append((art, bx, by, *self._begrenzt(ereignis)))
+        self._planen()
+
+    def _begrenzt(self, ereignis):
+        """Mausposition als Bildkoordinate, auf das Bild begrenzt (Ziehen über den Rand hinaus)."""
+        bx, by = self.ansicht.zu_bild(ereignis.x, ereignis.y)
+        return min(max(bx, 0), self.bild.width), min(max(by, 0), self.bild.height)
+
+    def rueckgaengig(self):
+        if self.markierungen:
+            self.markierungen.pop()
+            self._planen()
+
+    def ergebnis(self):
+        """Das Bild zum Speichern: Original oder Kopie mit eingebrannten Markierungen."""
+        if not self.markierungen:
+            return self.bild
+        import rueckmeldung_bild
+        return rueckmeldung_bild.einbrennen(self.bild, self.markierungen)
 
 
 def main(argv=None):

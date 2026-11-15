@@ -24,6 +24,12 @@ Im Erfassungsfenster:
 | Strg+Enter | speichern, zurück ins vorige Programm |
 | Esc | verwerfen (mit Rückfrage, wenn schon Text dasteht) |
 | Alt+1 / 2 / 3 | Art: Fehler / Idee / Notiz |
+| linke Maustaste ziehen | Rahmen, Pfeil oder Schwärzen (Auswahl über dem Bild) |
+| Mausrad | Zoom um die Mausposition |
+| rechte oder mittlere Maustaste ziehen | Ausschnitt verschieben |
+| Strg+Z (nach Klick ins Bild) | letzte Markierung zurücknehmen |
+
+Markierungen werden erst beim Speichern in voller Auflösung ins Bild eingebrannt. Geschwärztes ist danach wirklich weg, die ungeschwärzte Aufnahme liegt nie auf der Platte.
 
 Beenden vorerst mit Strg+C in der Konsole.
 
@@ -54,7 +60,7 @@ Der Knopf unten rechts fehlt, sobald das Fenster schmal ist.
 
 ## Stand
 
-Schritt 1 von 5, siehe [KONZEPT.md](KONZEPT.md): Kürzel, Aufnahme, Notiz, Speichern. Als Nächstes kommen die Zuordnung zu Projekten über eine Konfigurationsdatei, Rahmen und Schwärzen im Bild sowie eine EXE.
+Schritte 1 und (größtenteils) 3 von 5, siehe [KONZEPT.md](KONZEPT.md): Kürzel, Aufnahme, Notiz, Speichern, Markieren und Zoomen. Als Nächstes kommen die Zuordnung zu Projekten über eine Konfigurationsdatei und eine EXE.
 
 ## Entwicklung
 
@@ -63,7 +69,7 @@ python -m unittest discover -s tests -t .
 python -m ruff check .
 ```
 
-`rueckmeldung_kern.py` enthält die Logik ohne Fenster (nur Standardbibliothek, schnell getestet), `rueckmeldung_windows.py` die Windows-Aufrufe (Kürzel, Aufnahme, Fokus), `rueckmeldung.py` das Fenster.
+`rueckmeldung_kern.py` enthält die Logik ohne Fenster (nur Standardbibliothek, schnell getestet), `rueckmeldung_windows.py` die Windows-Aufrufe (Kürzel, Aufnahme, Fokus), `rueckmeldung_bild.py` das Einbrennen der Markierungen (Pillow), `rueckmeldung.py` die Fenster. `rauchtest.py` spielt den ganzen Ablauf ohne echte Eingaben durch.
 
 ## Lizenz
 

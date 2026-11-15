@@ -20,7 +20,10 @@
 
 ## Schritt 3 – Bild bearbeiten
 
-- [ ] Rahmen ziehen, Schwärzen (eingebrannt), weiteres Bild per erneutem Kürzel, ganzer Bildschirm, verzögert aufnehmen
+- [x] Rahmen, Pfeil (Peters Wunsch bei der Abnahme von Schritt 1), Schwärzen - erst beim Speichern in voller Auflösung eingebrannt; Rückgängig (Strg+Z) (2026-11-15)
+- [x] Mausrad-Zoom um die Maus, Verschieben mit rechter oder mittlerer Taste, Einpassen; Notizfeld in normaler Schrift statt Schreibmaschinenschrift (2026-11-15)
+- [x] Abnahme durch Peter (2026-11-15): „Passt“
+- [ ] Weiteres Bild per erneutem Kürzel, ganzer Bildschirm, verzögert aufnehmen
 
 ## Schritt 4 – Einordnen
 
