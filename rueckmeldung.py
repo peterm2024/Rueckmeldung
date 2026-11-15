@@ -202,8 +202,8 @@ class BildEditor(ttk.Frame):
     Markierungen (linke Taste ziehen: Rahmen, Pfeil oder Schwärzen). Die Markierungen liegen in Bildpixeln vor und
     werden erst beim Speichern in voller Auflösung eingebrannt (rueckmeldung_bild)."""
 
-    def __init__(self, eltern, bild, px, breite, hoehe):
-        super().__init__(eltern)
+    def __init__(self, behaelter, bild, px, breite, hoehe):
+        super().__init__(behaelter)
         self.bild = bild.convert("RGB")
         self.px = px
         self.markierungen = []                                   # [(art, x0, y0, x1, y1)] in Bildpixeln
