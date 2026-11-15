@@ -93,8 +93,10 @@ Diese Regel muss in die Arbeitsanweisung der Projekte (CLAUDE.md): Bilder mit `b
   "projekte": [
     {
       "name": "KID",
-      "programm": ["DokumentenManager.exe", "python.exe"],
-      "fenstertitel": "^Dokumenten-Manager",
+      "regeln": [
+        {"programm": "DokumentenManager.exe"},
+        {"programm": "python.exe", "fenstertitel": "^Dokumenten-Manager \\(KI Edition\\) v"}
+      ],
       "version": "v(\\d+\\.\\d+\\.\\d+)",
       "bild_fuer_ki": false,
       "protokoll": {"datei": "…/dokumenten_manager.log", "zeilen": 40, "vorgabe": false}
@@ -103,7 +105,7 @@ Diese Regel muss in die Arbeitsanweisung der Projekte (CLAUDE.md): Bilder mit `b
 }
 ```
 
-- Ein Projekt passt, wenn Programmname und Fenstertitel-Muster stimmen (jedes für sich optional). Passt keines, landet die Rückmeldung unter `Unbekannt`, das Projekt lässt sich im Fenster von Hand wählen.
+- Ein Projekt passt, wenn eine seiner Regeln passt; eine Regel passt, wenn Programmname und Fenstertitel-Muster stimmen (jedes für sich optional). Das Muster darf auch auf ein anderes Fenster desselben Programms passen, damit Dialoge beim Projekt ihres Hauptfensters landen (gebaut 15.11.2026). Passt keines, landet die Rückmeldung unter `Unbekannt`, das Projekt lässt sich im Fenster von Hand wählen.
 - Ohne Konfigurationsdatei läuft das Werkzeug mit Vorgaben: alles nach `Unbekannt`, Bilder nicht für die KI.
 
 ## Wie die Rückmeldungen in die Arbeit kommen

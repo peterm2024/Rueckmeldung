@@ -23,6 +23,7 @@ Kommunikation, Doku und Code-Kommentare auf Deutsch. Projektübergreifendes (Har
 - Das Kürzel läuft in einem eigenen Thread mit Windows-Nachrichtenschleife und meldet sich nur über eine Queue; Tkinter wird ausschließlich im Haupt-Thread angefasst (`after`-Abholung). 2026-11-15.
 - Aufnahme **vor** dem eigenen Fenster, über die DWM-Rahmenmaße, Prozess pro Monitor DPI-bewusst. 2026-11-15.
 - Kopfteil der Markdown-Datei mit JSON-Werten (zugleich YAML), Markdown zuletzt und über eine Temp-Datei geschrieben. 2026-11-15.
+- Konfiguration `rueckmeldung.json` neben dem Programm (nicht im Repo, Vorlage `rueckmeldung.beispiel.json`); Unbekannte Schlüssel sind ein Fehler, `_…` sind Kommentare. Projekt-Regeln prüfen alle sichtbaren Fenstertitel des Prozesses, damit Dialoge zum Hauptfenster finden. 2026-11-15.
 - Kein Netzwerkzugriff, keine Telemetrie. Bilder mit `bild_fuer_ki: nein` öffnet die KI nicht - Vorgabe für alle Projekte, die echte Daten zeigen.
 
 ## Arbeitsweise

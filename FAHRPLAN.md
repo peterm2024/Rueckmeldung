@@ -11,11 +11,13 @@
 - [x] Abnahme durch Peter (2026-11-15, echtes Kürzel über VS Code): „Funktioniert gut :-) Noch Pfeil und Rechteck zum hervorheben ... und Mausrad-Zoom“
 - **Meilenstein: Eine echte Rückmeldung liegt im Ordner, das getestete Programm hat danach wieder den Fokus.**
 
-## Schritt 2 – Projekt und Kontext
+## Schritt 2 – Projekt und Kontext (2026-11-15)
 
-- [ ] `rueckmeldung.json`: Kürzel, Ablage, Rechner-Kürzel, Projekte (Programm, Fenstertitel-Muster, Version, `bild_fuer_ki`, Protokoll)
-- [ ] Bildschirmgröße und Skalierung in den Kopf
-- [ ] Projekt im Fenster von Hand wählbar
+- [x] `rueckmeldung.json`: Kürzel, Ablage, Rechner-Kürzel, Projekte mit Regeln (Programm und/oder Fenstertitel-Muster, auch über ein anderes Fenster desselben Programms - so landen Dialoge beim Projekt ihres Hauptfensters), Version, `bild_fuer_ki`, Protokoll; Unbekanntes wird als Tippfehler gemeldet; Vorlage `rueckmeldung.beispiel.json`
+- [x] Bildschirmgröße und Skalierung in den Kopf
+- [x] Projekt im Fenster von Hand wählbar, Schalter „Bild für KI freigeben“ und „Protokoll anhängen“ mit den Vorgaben des Projekts
+- [x] 41 Unit-Tests, Rauchtest mit Dialog eines fremden Prozesses
+- [x] Abnahme durch Peter (2026-11-15): „Passt soweit“, dazu Wunsch: Bild auf einen Ausschnitt beschneiden
 - **Meilenstein: Eine Rückmeldung zu KID landet ohne Zutun unter `KID/` mit Version.**
 
 ## Schritt 3 – Bild bearbeiten

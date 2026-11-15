@@ -1,0 +1,25 @@
+{
+  "_hinweis": "Vorlage: als rueckmeldung.json neben rueckmeldung.py (bzw. der EXE) speichern und anpassen. Schlüssel mit _ am Anfang sind Kommentare.",
+  "kuerzel": "ctrl+alt+f",
+  "ablage": "~/Rueckmeldungen",
+  "rechner": "Entwickler-PC",
+  "projekte": [
+    {
+      "_hinweis": "Erstes passendes Projekt gewinnt. Eine Regel passt, wenn alle ihre Angaben passen; fenstertitel ist ein regulärer Ausdruck und darf auch auf ein anderes Fenster desselben Programms passen (so landen Dialoge beim Hauptfenster).",
+      "name": "MeinProgramm",
+      "regeln": [
+        {"programm": "MeinProgramm.exe"},
+        {"programm": "python.exe", "fenstertitel": "^Mein Programm v"},
+        {"programm": "Code.exe", "fenstertitel": " - MeinProgramm - Visual Studio Code$"}
+      ],
+      "version": "v(\\d+\\.\\d+\\.\\d+)",
+      "bild_fuer_ki": false,
+      "protokoll": {"datei": "~/MeinProgramm/*.log", "zeilen": 40, "vorgabe": false}
+    },
+    {
+      "name": "Werkzeug",
+      "regeln": [{"programm": "Werkzeug.exe"}],
+      "bild_fuer_ki": true
+    }
+  ]
+}

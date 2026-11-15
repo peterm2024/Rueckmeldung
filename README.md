@@ -12,10 +12,46 @@ Voraussetzung: Windows, Python 3.11+ mit Tkinter, dazu Pillow.
 
 ```bash
 python -m pip install -r requirements.txt
-python rueckmeldung.py                        # läuft im Hintergrund, Kürzel Strg+Alt+F, Ablage ~/Rueckmeldungen
-python rueckmeldung.py --ablage D:/Rueck      # andere Ablage
-python rueckmeldung.py --kuerzel ctrl+alt+r   # anderes Kürzel
+python rueckmeldung.py                        # läuft im Hintergrund, Einstellungen aus rueckmeldung.json
+python rueckmeldung.py --konfig andere.json   # andere Konfiguration
+python rueckmeldung.py --ablage D:/Rueck      # andere Ablage (überschreibt die Konfiguration)
+python rueckmeldung.py --kuerzel ctrl+alt+r   # anderes Kürzel (überschreibt die Konfiguration)
 ```
+
+Ohne `rueckmeldung.json` gelten Strg+Alt+F und `~/Rueckmeldungen`, und alles landet unter `Unbekannt`.
+
+## Projekte zuordnen
+
+`rueckmeldung.json` neben `rueckmeldung.py` (Vorlage: [rueckmeldung.beispiel.json](rueckmeldung.beispiel.json)) sagt, welches Fenster zu welchem Projekt gehört:
+
+```json
+{
+  "kuerzel": "ctrl+alt+f",
+  "ablage": "~/Rueckmeldungen",
+  "rechner": "Entwickler-PC",
+  "projekte": [
+    {
+      "name": "MeinProgramm",
+      "regeln": [
+        {"programm": "MeinProgramm.exe"},
+        {"programm": "python.exe", "fenstertitel": "^Mein Programm v"}
+      ],
+      "version": "v(\\d+\\.\\d+\\.\\d+)",
+      "bild_fuer_ki": false,
+      "protokoll": {"datei": "~/MeinProgramm/*.log", "zeilen": 40, "vorgabe": false}
+    }
+  ]
+}
+```
+
+- **Regeln:** Das erste Projekt mit einer passenden Regel gewinnt. Eine Regel passt, wenn alle ihre Angaben passen: `programm` ist der Dateiname des Programms, `fenstertitel` ein regulärer Ausdruck. Er darf auch auf ein anderes Fenster desselben Programms passen, so landet ein Dialog wie „Einstellungen“ beim Projekt seines Hauptfensters.
+- **version:** regulärer Ausdruck mit einer Gruppe, angewandt auf die Fenstertitel des Programms.
+- **bild_fuer_ki:** Vorgabe für den Schalter „Bild für KI freigeben“ (siehe unten).
+- **protokoll:** Die letzten Zeilen der neuesten passenden Datei kommen auf Wunsch als `…_protokoll.txt` dazu. `vorgabe` sagt, ob der Schalter dafür anfangs gesetzt ist.
+- **rechner:** freies Kürzel für den Kopf der Rückmeldung (statt des echten Rechnernamens).
+- Schlüssel, die mit `_` beginnen, sind Kommentare. Alles andere Unbekannte meldet das Werkzeug beim Start als Fehler, damit Tippfehler nicht still wirkungslos bleiben.
+
+Im Erfassungsfenster steht das erkannte Projekt oben und lässt sich von Hand umstellen.
 
 Im Erfassungsfenster:
 
@@ -37,20 +73,26 @@ Beenden vorerst mit Strg+C in der Konsole.
 
 ```
 ~/Rueckmeldungen/
-  Unbekannt/
+  MeinProgramm/
     2026-11-15_210412_fehler.md
     2026-11-15_210412_fehler_1.png
+    2026-11-15_210412_fehler_protokoll.txt
+  Unbekannt/
 ```
 
 ```markdown
 ---
-projekt: "Unbekannt"
+projekt: "MeinProgramm"
 art: "Fehler"
 zeit: "2026-11-15 21:04:12"
 status: "offen"
-fenster: "Mein Programm v1.2"
+version: "1.2.0"
+fenster: "Mein Programm v1.2.0"
 programm: "MeinProgramm.exe"
+rechner: "Entwickler-PC"
+bildschirm: "2560x1440, Skalierung 125 %"
 bilder: ["2026-11-15_210412_fehler_1.png"]
+protokoll: "2026-11-15_210412_fehler_protokoll.txt"
 bild_fuer_ki: nein
 ---
 Der Knopf unten rechts fehlt, sobald das Fenster schmal ist.
@@ -60,7 +102,7 @@ Der Knopf unten rechts fehlt, sobald das Fenster schmal ist.
 
 ## Stand
 
-Schritte 1 und (größtenteils) 3 von 5, siehe [KONZEPT.md](KONZEPT.md): Kürzel, Aufnahme, Notiz, Speichern, Markieren und Zoomen. Als Nächstes kommen die Zuordnung zu Projekten über eine Konfigurationsdatei und eine EXE.
+Schritte 1, 2 und (größtenteils) 3 von 5, siehe [KONZEPT.md](KONZEPT.md): Kürzel, Aufnahme, Notiz, Speichern, Projekte zuordnen, Markieren und Zoomen. Als Nächstes kommen `liste`/`erledigt` zum Einordnen und eine EXE.
 
 ## Entwicklung
 

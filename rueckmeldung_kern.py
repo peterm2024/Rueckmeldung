@@ -64,11 +64,11 @@ def ordnername(projekt):
 
 def dateistamm(ordner, jetzt, art):
     """Freier Dateiname ohne Endung, etwa „2026-11-15_210412_fehler“; gibt es ihn schon, „…_fehler_2“ usw.
-    Geprüft wird gegen die Markdown-Datei und ihr erstes Bild, damit auch eine halb geschriebene Rückmeldung
+    Geprüft wird gegen die Markdown-Datei, ihr erstes Bild und ihr Protokoll, damit auch eine halb geschriebene Rückmeldung
     nicht überschrieben wird."""
     basis = f"{jetzt:%Y-%m-%d_%H%M%S}_{(art or ARTEN[0]).lower()}"
     stamm, n = basis, 1
-    while os.path.exists(os.path.join(ordner, stamm + ".md")) or os.path.exists(os.path.join(ordner, stamm + "_1.png")):
+    while any(os.path.exists(os.path.join(ordner, stamm + endung)) for endung in (".md", "_1.png", "_protokoll.txt")):
         n += 1
         stamm = f"{basis}_{n}"
     return stamm
@@ -87,8 +87,9 @@ def kopf_text(felder):
     return "\n".join(zeilen) + "\n"
 
 
-def speichere(ablage, projekt, jetzt, art, notiz, bilder=(), felder=None):
-    """Rückmeldung schreiben. bilder = PNG-Bytes, felder = weitere Kopfangaben (Fenster, Programm ...).
+def speichere(ablage, projekt, jetzt, art, notiz, bilder=(), felder=None, protokoll=None):
+    """Rückmeldung schreiben. bilder = PNG-Bytes, felder = weitere Kopfangaben (Fenster, Programm ...),
+    protokoll = Text, der als „…_protokoll.txt“ daneben gelegt wird.
 
     Erst die Bilder, zuletzt die Markdown-Datei (über eine Temp-Datei), damit ein Absturz mittendrin nie eine
     Markdown-Datei ohne ihre Bilder hinterlässt. Gibt den Pfad der Markdown-Datei zurück."""
@@ -106,7 +107,12 @@ def speichere(ablage, projekt, jetzt, art, notiz, bilder=(), felder=None):
     kopf = {"projekt": ordnername(projekt), "art": art, "zeit": f"{jetzt:%Y-%m-%d %H:%M:%S}", "status": "offen"}
     kopf.update(felder or {})
     kopf["bilder"] = namen
-    kopf.setdefault("bild_fuer_ki", False)
+    if protokoll:
+        name = f"{stamm}_protokoll.txt"
+        with open(os.path.join(ordner, name), "w", encoding="utf-8", newline="\n") as f:
+            f.write(protokoll.rstrip("\n") + "\n")
+        kopf["protokoll"] = name
+    kopf["bild_fuer_ki"] = bool(kopf.pop("bild_fuer_ki", False))     # immer zuletzt, gut sichtbar
     text = kopf_text(kopf) + (notiz or "").strip() + "\n"
     ziel = os.path.join(ordner, stamm + ".md")
     temp = ziel + ".tmp"
@@ -232,3 +238,137 @@ def pfeilspitze(x0, y0, x1, y1, laenge):
 
 def normiere_rechteck(x0, y0, x1, y1):
     return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
+
+
+# --- Konfiguration und Projekt-Zuordnung ---
+
+KONFIG_DATEI = "rueckmeldung.json"
+STANDARD_KUERZEL = "ctrl+alt+f"
+STANDARD_ABLAGE = "~/Rueckmeldungen"
+
+
+class Konfigfehler(ValueError):
+    """rueckmeldung.json ist nicht lesbar oder enthält Unbekanntes (meist ein Tippfehler)."""
+
+
+def _pruefe_schluessel(wo, d, erlaubt):
+    if not isinstance(d, dict):
+        raise Konfigfehler(f"{wo}: erwartet ein Objekt {{…}}")
+    falsch = sorted(k for k in d if k not in erlaubt and not k.startswith("_"))
+    if falsch:
+        raise Konfigfehler(f"{wo}: unbekannt {', '.join(falsch)} (erlaubt: {', '.join(sorted(erlaubt))})")
+
+
+def _pruefe_muster(wo, muster, gruppe=False):
+    if not isinstance(muster, str):
+        raise Konfigfehler(f"{wo}: erwartet einen Text")
+    try:
+        r = re.compile(muster)
+    except re.error as e:
+        raise Konfigfehler(f"{wo}: kein gültiger regulärer Ausdruck ({e})") from None
+    if gruppe and r.groups < 1:
+        raise Konfigfehler(f"{wo}: braucht eine Gruppe in Klammern, etwa v(\d+\.\d+\.\d+)")
+
+
+def pruefe_konfig(daten):
+    """Konfiguration prüfen und mit Vorgaben auffüllen. Schlüssel mit „_“ am Anfang sind Kommentare."""
+    _pruefe_schluessel("rueckmeldung.json", daten, {"kuerzel", "ablage", "rechner", "projekte"})
+    k = {"kuerzel": STANDARD_KUERZEL, "ablage": STANDARD_ABLAGE, "rechner": "", "projekte": []}
+    for schluessel in ("kuerzel", "ablage", "rechner"):
+        if schluessel in daten:
+            if not isinstance(daten[schluessel], str):
+                raise Konfigfehler(f"{schluessel}: erwartet einen Text")
+            k[schluessel] = daten[schluessel]
+    try:
+        lies_kuerzel(k["kuerzel"])
+    except Kuerzelfehler as e:
+        raise Konfigfehler(f"kuerzel: {e}") from None
+    projekte = daten.get("projekte", [])
+    if not isinstance(projekte, list):
+        raise Konfigfehler("projekte: erwartet eine Liste […]")
+    for i, p in enumerate(projekte, start=1):
+        wo = f"projekte[{i}]"
+        _pruefe_schluessel(wo, p, {"name", "regeln", "version", "bild_fuer_ki", "protokoll"})
+        if not isinstance(p.get("name"), str) or not p["name"].strip():
+            raise Konfigfehler(f"{wo}: name fehlt")
+        wo = f"projekte[{i}] ({p['name']})"
+        regeln = p.get("regeln")
+        if not isinstance(regeln, list) or not regeln:
+            raise Konfigfehler(f"{wo}: regeln fehlt (Liste mit programm und/oder fenstertitel)")
+        for j, r in enumerate(regeln, start=1):
+            _pruefe_schluessel(f"{wo}, regeln[{j}]", r, {"programm", "fenstertitel"})
+            if not r.get("programm") and not r.get("fenstertitel"):
+                raise Konfigfehler(f"{wo}, regeln[{j}]: braucht programm oder fenstertitel")
+            if "fenstertitel" in r:
+                _pruefe_muster(f"{wo}, regeln[{j}].fenstertitel", r["fenstertitel"])
+        if "version" in p:
+            _pruefe_muster(f"{wo}.version", p["version"], gruppe=True)
+        if not isinstance(p.get("bild_fuer_ki", False), bool):
+            raise Konfigfehler(f"{wo}.bild_fuer_ki: erwartet true oder false")
+        if "protokoll" in p:
+            pr = p["protokoll"]
+            _pruefe_schluessel(f"{wo}.protokoll", pr, {"datei", "zeilen", "vorgabe"})
+            if not isinstance(pr.get("datei"), str):
+                raise Konfigfehler(f"{wo}.protokoll.datei fehlt")
+            if not isinstance(pr.get("zeilen", 40), int) or pr.get("zeilen", 40) < 1:
+                raise Konfigfehler(f"{wo}.protokoll.zeilen: erwartet eine Zahl ab 1")
+            if not isinstance(pr.get("vorgabe", False), bool):
+                raise Konfigfehler(f"{wo}.protokoll.vorgabe: erwartet true oder false")
+    k["projekte"] = projekte
+    return k
+
+
+def lade_konfig(pfad):
+    """rueckmeldung.json lesen; fehlt die Datei, gelten die Vorgaben (alles nach „Unbekannt“)."""
+    if not os.path.exists(pfad):
+        return pruefe_konfig({})
+    try:
+        with open(pfad, encoding="utf-8-sig") as f:
+            daten = json.load(f)
+    except ValueError as e:
+        raise Konfigfehler(f"{os.path.basename(pfad)} ist kein gültiges JSON: {e}") from None
+    return pruefe_konfig(daten)
+
+
+def ordne_zu(konfig, programm, titel):
+    """Erstes Projekt, dessen Regel passt, sonst None. titel = Fenstertitel des Prozesses (das aufgenommene
+    Fenster zuerst) - so erkennt eine Regel auf den Hauptfenstertitel auch einen Dialog desselben Programms.
+    Eine Regel passt, wenn alle ihre Angaben passen: programm (Dateiname, ohne Groß/klein) und fenstertitel
+    (regulärer Ausdruck, irgendwo in einem der Titel)."""
+    for p in konfig["projekte"]:
+        for r in p["regeln"]:
+            if r.get("programm") and r["programm"].lower() != (programm or "").lower():
+                continue
+            if r.get("fenstertitel") and not any(re.search(r["fenstertitel"], t) for t in titel):
+                continue
+            return p
+    return None
+
+
+def finde_version(projekt, titel):
+    """Version aus dem ersten Titel, in dem das Muster des Projekts passt, sonst ""."""
+    if not projekt or not projekt.get("version"):
+        return ""
+    for t in titel:
+        m = re.search(projekt["version"], t)
+        if m:
+            return m.group(1)
+    return ""
+
+
+def protokoll_ende(muster, zeilen):
+    """Letzte Zeilen der neuesten Datei, die auf muster passt (~ und * erlaubt). -> (Pfad, Text) oder (None, "")."""
+    import glob
+    treffer = [p for p in glob.glob(os.path.expanduser(muster)) if os.path.isfile(p)]
+    if not treffer:
+        return None, ""
+    pfad = max(treffer, key=os.path.getmtime)
+    groesse = os.path.getsize(pfad)
+    lesen = min(groesse, max(65536, zeilen * 400))
+    with open(pfad, "rb") as f:
+        f.seek(groesse - lesen)
+        text = f.read().decode("utf-8", errors="replace")
+    teile = text.splitlines()
+    if lesen < groesse and teile:
+        teile = teile[1:]                                        # erste Zeile ist vermutlich angeschnitten
+    return pfad, "\n".join(teile[-zeilen:])

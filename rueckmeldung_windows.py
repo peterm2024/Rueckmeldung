@@ -78,6 +78,50 @@ def fenster_programm(hwnd):
         kernel32.CloseHandle(h)
 
 
+def prozess_titel(hwnd):
+    """Titel aller sichtbaren Fenster des Prozesses, dem hwnd gehört - das Fenster selbst zuerst. So lässt sich
+    ein Dialog („Einstellungen“) über den Titel seines Hauptfensters einem Projekt zuordnen."""
+    ziel = wt.DWORD()
+    user32.GetWindowThreadProcessId(wt.HWND(hwnd), ctypes.byref(ziel))
+    eigener = fenster_titel(hwnd)
+    andere = []
+
+    @ctypes.WINFUNCTYPE(wt.BOOL, wt.HWND, wt.LPARAM)
+    def je(h, _):
+        pid = wt.DWORD()
+        user32.GetWindowThreadProcessId(h, ctypes.byref(pid))
+        if pid.value == ziel.value and h != hwnd and user32.IsWindowVisible(h):
+            t = fenster_titel(h)
+            if t and t not in andere and t != eigener:
+                andere.append(t)
+        return True
+    user32.EnumWindows(je, 0)
+    return ([eigener] if eigener else []) + andere
+
+
+class _MONITORINFO(ctypes.Structure):
+    _fields_ = [("cbSize", wt.DWORD), ("rcMonitor", wt.RECT), ("rcWork", wt.RECT), ("dwFlags", wt.DWORD)]
+
+
+def bildschirm(hwnd):
+    """„2560x1440, Skalierung 125 %“ für den Bildschirm, auf dem das Fenster überwiegend liegt; "" bei Fehler."""
+    user32.MonitorFromWindow.restype = wt.HMONITOR
+    mon = user32.MonitorFromWindow(wt.HWND(hwnd), 2)            # MONITOR_DEFAULTTONEAREST
+    info = _MONITORINFO()
+    info.cbSize = ctypes.sizeof(info)
+    if not mon or not user32.GetMonitorInfoW(mon, ctypes.byref(info)):
+        return ""
+    r = info.rcMonitor
+    text = f"{r.right - r.left}x{r.bottom - r.top}"
+    try:
+        x, y = wt.UINT(), wt.UINT()
+        if ctypes.windll.shcore.GetDpiForMonitor(mon, 0, ctypes.byref(x), ctypes.byref(y)) == 0:   # MDT_EFFECTIVE_DPI
+            text += f", Skalierung {round(x.value * 100 / 96)} %"
+    except (AttributeError, OSError):
+        pass
+    return text
+
+
 def fensterrahmen(hwnd):
     """Sichtbarer Rahmen (links, oben, rechts, unten) in Bildschirm-Pixeln. Unter Windows 10/11 liefert
     GetWindowRect den unsichtbaren Schatten-Rand mit, darum zuerst DWM fragen."""
