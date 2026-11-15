@@ -60,12 +60,12 @@ Im Erfassungsfenster:
 | Strg+Enter | speichern, zurück ins vorige Programm |
 | Esc | verwerfen (mit Rückfrage, wenn schon Text dasteht) |
 | Alt+1 / 2 / 3 | Art: Fehler / Idee / Notiz |
-| linke Maustaste ziehen | Rahmen, Pfeil oder Schwärzen (Auswahl über dem Bild) |
+| linke Maustaste ziehen | Rahmen, Pfeil, Schwärzen oder Zuschneiden (Auswahl über dem Bild) |
 | Mausrad | Zoom um die Mausposition |
 | rechte oder mittlere Maustaste ziehen | Ausschnitt verschieben |
 | Strg+Z (nach Klick ins Bild) | letzte Markierung zurücknehmen |
 
-Markierungen werden erst beim Speichern in voller Auflösung ins Bild eingebrannt. Geschwärztes ist danach wirklich weg, die ungeschwärzte Aufnahme liegt nie auf der Platte.
+Beim Zuschneiden gilt der zuletzt gezogene Ausschnitt, außerhalb davon ist das Bild abgedunkelt. Markierungen werden erst beim Speichern in voller Auflösung ins Bild eingebrannt, danach wird zugeschnitten. Geschwärztes ist danach wirklich weg, die ungeschwärzte Aufnahme liegt nie auf der Platte.
 
 Beenden vorerst mit Strg+C in der Konsole.
 

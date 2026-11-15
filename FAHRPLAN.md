@@ -25,6 +25,8 @@
 - [x] Rahmen, Pfeil (Peters Wunsch bei der Abnahme von Schritt 1), Schwärzen - erst beim Speichern in voller Auflösung eingebrannt; Rückgängig (Strg+Z) (2026-11-15)
 - [x] Mausrad-Zoom um die Maus, Verschieben mit rechter oder mittlerer Taste, Einpassen; Notizfeld in normaler Schrift statt Schreibmaschinenschrift (2026-11-15)
 - [x] Abnahme durch Peter (2026-11-15): „Passt“
+- [x] Zuschneiden (Peters Wunsch bei der Abnahme von Schritt 2): letzter gezogener Ausschnitt gilt, außerhalb abgedunkelt, beim Speichern nach dem Einbrennen angewandt; Rückgängig holt den vorigen Ausschnitt (2026-11-15)
+- [x] Abnahme Zuschneiden durch Peter (2026-11-15): „passt“
 - [ ] Weiteres Bild per erneutem Kürzel, ganzer Bildschirm, verzögert aufnehmen
 
 ## Schritt 4 – Einordnen

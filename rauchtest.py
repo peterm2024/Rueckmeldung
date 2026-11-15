@@ -104,8 +104,13 @@ try:
     ziehe("Schwärzen", 10, 10, 11, 11)                      # nur Klick, keine Markierung
     ziehe("Rahmen", 100, 100, 150, 150)
     ed.rueckgaengig()
+    ziehe("Zuschneiden", 0, 0, 200, 200)                    # wird vom nächsten Ausschnitt ersetzt
+    ziehe("Zuschneiden", 10, 10, 390, 260)
+    pumpe(0.2)
+    abgedunkelt = [i for i in ed.flaeche.find_withtag("mark") if ed.flaeche.itemcget(i, "stipple") == "gray50"]
+    print("Ausschnitt abgedunkelt:", len(abgedunkelt) == 4)
     print("Markierungen (Klick ignoriert, letzte zurückgenommen):",
-          [x[0] for x in ed.markierungen] == ["Rahmen", "Pfeil", "Schwärzen"])
+          [x[0] for x in ed.markierungen] == ["Rahmen", "Pfeil", "Schwärzen", "Zuschneiden", "Zuschneiden"])
     a, b = ed.ansicht.zu_flaeche(200, 140)
     ed.flaeche.event_generate("<MouseWheel>", x=int(a), y=int(b), delta=240)
     pumpe(0.2)
@@ -129,11 +134,12 @@ try:
         print("Protokoll = letzte 5 Zeilen:", p.read() == "".join(f"Zeile {i}\n" for i in range(96, 101)))
     from PIL import Image
     gespeichert = Image.open(os.path.join(ordner, kopf["bilder"][0])).convert("RGB")
-    print("Eingebrannt - Rahmen rot:", gespeichert.getpixel((51, 120)) == (230, 30, 30),
-          "| innen magenta:", gespeichert.getpixel((150, 120)) == (255, 0, 255),
-          "| Pfeil rot:", gespeichert.getpixel((150, 240)) == (230, 30, 30),
-          "| geschwärzt:", gespeichert.getpixel((340, 50)) == (0, 0, 0),
-          "| zurückgenommen fehlt:", gespeichert.getpixel((125, 101)) == (255, 0, 255))
+    print("Zugeschnitten auf den letzten Ausschnitt:", gespeichert.size == (380, 250), gespeichert.size)
+    print("Eingebrannt (um 10 px verschoben) - Rahmen rot:", gespeichert.getpixel((41, 110)) == (230, 30, 30),
+          "| innen magenta:", gespeichert.getpixel((140, 110)) == (255, 0, 255),
+          "| Pfeil rot:", gespeichert.getpixel((140, 230)) == (230, 30, 30),
+          "| geschwärzt:", gespeichert.getpixel((330, 40)) == (0, 0, 0),
+          "| zurückgenommen fehlt:", gespeichert.getpixel((115, 91)) == (255, 0, 255))
 
     # Zweite Rückmeldung: Projekt von Hand auf „Unbekannt“ -> keine Version, kein Protokoll, Bild nicht für KI
     app.ausgeloest(ziel_hwnd)

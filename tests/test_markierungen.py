@@ -121,6 +121,34 @@ class TestEinbrennen(unittest.TestCase):
         with self.assertRaises(ValueError):
             bild.einbrennen(self.weiss, [("Kreis", 0, 0, 1, 1)])
 
+    def test_zuschneiden_zuletzt(self):
+        # Rahmen reicht über den Ausschnitt hinaus; Ausschnitt rückwärts gezogen
+        e = bild.einbrennen(self.weiss, [("Zuschneiden", 300, 250, 100, 50), ("Rahmen", 150, 100, 350, 280)])
+        self.assertEqual(e.size, (200, 200))
+        self.assertEqual(e.getpixel((51, 100)), bild.FARBE)                   # Rahmen-Kante bei x=150 -> 50
+        self.assertEqual(e.getpixel((10, 10)), (255, 255, 255))
+
+    def test_nur_zuschneiden_veraendert_original_nicht(self):
+        e = bild.einbrennen(self.weiss, [("Zuschneiden", 0, 0, 10, 10)])
+        self.assertEqual(e.size, (10, 10))
+        self.assertEqual(self.weiss.size, (400, 300))
+
+
+class TestZuschnitt(unittest.TestCase):
+    def test_letzter_gilt_und_begrenzt(self):
+        m = [("Zuschneiden", 10, 10, 50, 50), ("Rahmen", 0, 0, 5, 5), ("Zuschneiden", -20, 280.4, 120.6, 400)]
+        self.assertEqual(kern.zuschnitt(m, 400, 300), (0, 280, 121, 300))
+
+    def test_rueckgaengig_holt_vorigen(self):
+        m = [("Zuschneiden", 10, 10, 50, 50), ("Zuschneiden", 0, 0, 100, 100)]
+        m.pop()
+        self.assertEqual(kern.zuschnitt(m, 400, 300), (10, 10, 50, 50))
+
+    def test_keiner_oder_zu_klein(self):
+        self.assertIsNone(kern.zuschnitt([("Rahmen", 0, 0, 5, 5)], 400, 300))
+        self.assertIsNone(kern.zuschnitt([("Zuschneiden", 10, 10, 11, 50)], 400, 300))
+        self.assertIsNone(kern.zuschnitt([("Zuschneiden", 500, 10, 600, 50)], 400, 300))   # ganz außerhalb
+
 
 if __name__ == "__main__":
     unittest.main()

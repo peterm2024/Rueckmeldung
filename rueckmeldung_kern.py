@@ -148,7 +148,7 @@ def lies(pfad):
 
 # --- Bildansicht und Markierungen (Geometrie ohne Pillow und ohne Fenster) ---
 
-MARKIERUNGEN = ("Rahmen", "Pfeil", "Schwärzen")
+MARKIERUNGEN = ("Rahmen", "Pfeil", "Schwärzen", "Zuschneiden")
 
 
 class Ansicht:
@@ -238,6 +238,20 @@ def pfeilspitze(x0, y0, x1, y1, laenge):
 
 def normiere_rechteck(x0, y0, x1, y1):
     return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
+
+
+def zuschnitt(markierungen, bild_b, bild_h):
+    """Der zuletzt gezogene Ausschnitt (links, oben, rechts, unten) in ganzen Bildpixeln, auf das Bild begrenzt;
+    None, wenn keiner gezogen ist oder er kleiner als 2 × 2 Pixel ist. Ein neuer Ausschnitt ersetzt den alten,
+    Rückgängig holt den vorigen zurück."""
+    for art, x0, y0, x1, y1 in reversed(markierungen):
+        if art != "Zuschneiden":
+            continue
+        l, o, r, u = normiere_rechteck(x0, y0, x1, y1)
+        l, o = max(0, round(l)), max(0, round(o))
+        r, u = min(bild_b, round(r)), min(bild_h, round(u))
+        return (l, o, r, u) if r - l >= 2 and u - o >= 2 else None
+    return None
 
 
 # --- Konfiguration und Projekt-Zuordnung ---

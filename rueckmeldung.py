@@ -286,7 +286,7 @@ class BildEditor(ttk.Frame):
         leiste = ttk.Frame(self)
         leiste.pack(side=tk.TOP, fill=tk.X)
         self.werkzeug = tk.StringVar(value=kern.MARKIERUNGEN[0])
-        for art, zeichen in zip(kern.MARKIERUNGEN, ("▭", "➜", "■")):
+        for art, zeichen in zip(kern.MARKIERUNGEN, ("▭", "➜", "■", "✂")):
             ttk.Radiobutton(leiste, text=f"{zeichen} {art}", value=art, variable=self.werkzeug).pack(
                 side=tk.LEFT, padx=(0, px(10)))
         ttk.Button(leiste, text="Rückgängig (Strg+Z)", command=self.rueckgaengig).pack(side=tk.LEFT, padx=(px(6), 0))
@@ -331,7 +331,9 @@ class BildEditor(ttk.Frame):
             self._foto = ImageTk.PhotoImage(teil, master=self)
             f.create_image(round(fx), round(fy), image=self._foto, anchor=tk.NW, tags="bild")
         for m in self.markierungen:
-            self._zeichne_markierung(*m)
+            if m[0] != "Zuschneiden":
+                self._zeichne_markierung(*m)
+        self._zeichne_zuschnitt()
         self.zoom_text.configure(text=f"{a.massstab * 100:.0f} %   ·   Rad: Zoom   ·   rechte Taste: verschieben")
 
     def _zeichne_markierung(self, art, x0, y0, x1, y1, element=None):
@@ -343,6 +345,8 @@ class BildEditor(ttk.Frame):
             f.coords(element, a0, b0, a1, b1)
             return element
         breite = max(2, round(kern.linienbreite(*self.bild.size) * self.ansicht.massstab))
+        if art == "Zuschneiden":                                 # nur beim Aufziehen; danach _zeichne_zuschnitt
+            return f.create_rectangle(a0, b0, a1, b1, outline="white", width=2, dash=(6, 4), tags="mark")
         if art == "Schwärzen":
             return f.create_rectangle(a0, b0, a1, b1, fill="black", outline="black", tags="mark")
         if art == "Rahmen":
@@ -350,6 +354,21 @@ class BildEditor(ttk.Frame):
         spitze = breite * 5
         return f.create_line(a0, b0, a1, b1, fill="#e61e1e", width=breite, arrow=tk.LAST,
                              arrowshape=(spitze, spitze, spitze * 0.47), tags="mark")
+
+    def _zeichne_zuschnitt(self):
+        """Außerhalb des Ausschnitts abdunkeln (Raster über dem Bild), Ausschnitt gestrichelt umranden."""
+        ausschnitt = kern.zuschnitt(self.markierungen, *self.bild.size)
+        if not ausschnitt:
+            return
+        f = self.flaeche
+        bl, bo = self.ansicht.zu_flaeche(0, 0)
+        br, bu = self.ansicht.zu_flaeche(*self.bild.size)
+        l, o = self.ansicht.zu_flaeche(ausschnitt[0], ausschnitt[1])
+        r, u = self.ansicht.zu_flaeche(ausschnitt[2], ausschnitt[3])
+        for x0, y0, x1, y1 in ((bl, bo, br, o), (bl, u, br, bu), (bl, o, l, u), (r, o, br, u)):
+            if x1 > x0 and y1 > y0:
+                f.create_rectangle(x0, y0, x1, y1, fill="black", stipple="gray50", width=0, tags="mark")
+        f.create_rectangle(l, o, r, u, outline="white", width=2, dash=(6, 4), tags="mark")
 
     def _groesse(self, ereignis):
         self.ansicht.neue_flaeche(ereignis.width, ereignis.height)

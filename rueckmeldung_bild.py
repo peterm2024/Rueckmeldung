@@ -2,7 +2,8 @@
 
 Eine Markierung ist (art, x0, y0, x1, y1) in Bildpixeln, art aus rueckmeldung_kern.MARKIERUNGEN. Eingebrannt wird
 in eine Kopie in voller Auflösung; Schwärzen deckt die Fläche vollständig ab, das Original darunter wird nirgends
-gespeichert.
+gespeichert. „Zuschneiden“ wird zuletzt angewandt (der zuletzt gezogene Ausschnitt), damit Rahmen und Pfeile, die
+über den Rand des Ausschnitts reichen, sauber abgeschnitten werden.
 """
 from PIL import ImageDraw
 
@@ -17,6 +18,8 @@ def einbrennen(bild, markierungen):
     zeichne = ImageDraw.Draw(ergebnis)
     breite = kern.linienbreite(*ergebnis.size)
     for art, x0, y0, x1, y1 in markierungen:
+        if art == "Zuschneiden":
+            continue
         if art == "Schwärzen":
             l, o, r, u = kern.normiere_rechteck(x0, y0, x1, y1)
             zeichne.rectangle((l, o, r, u), fill=(0, 0, 0))
@@ -30,4 +33,5 @@ def einbrennen(bild, markierungen):
             zeichne.polygon(spitze, fill=FARBE)
         else:
             raise ValueError(f"Unbekannte Markierung: {art}")
-    return ergebnis
+    ausschnitt = kern.zuschnitt(markierungen, *ergebnis.size)
+    return ergebnis.crop(ausschnitt) if ausschnitt else ergebnis
