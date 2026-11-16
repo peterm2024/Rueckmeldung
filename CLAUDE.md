@@ -15,7 +15,12 @@ Kommunikation, Doku und Code-Kommentare auf Deutsch. Projektübergreifendes (Har
 .venv/Scripts/python rueckmeldung.py                          # starten (Strg+Alt+F, Ablage ~/Rueckmeldungen)
 .venv/Scripts/python -m unittest discover -s tests -t .       # Tests
 .venv/Scripts/python -m ruff check .                          # Sicherheitsnetz (F, E9, E722)
+.venv/Scripts/python build_exe.py                             # dist/Rueckmeldung.exe bauen und prüfen
 ```
+
+## Release
+
+`VERSION` in `rueckmeldung_kern.py` und `CHANGELOG.md` angleichen, Tests und Ruff grün, `build_exe.py`, EXE kurz starten, committen, `git tag -a vX.Y.Z`, pushen, `gh release create vX.Y.Z dist/Rueckmeldung.exe` mit dem Changelog-Abschnitt als Text. Danach `VERSION` auf `X.Y.Z+dev`.
 
 ## Technische Entscheidungen
 

@@ -6,9 +6,15 @@ Gedacht für Entwickler, die ihr eigenes Programm im Alltag ausprobieren: Was au
 
 Nichts verlässt den Rechner: Das Werkzeug greift nicht aufs Netz zu.
 
+## Download
+
+Unter [Releases](https://github.com/peterm2024/Rueckmeldung/releases) liegt `Rueckmeldung.exe`, eine einzelne Datei, die ohne Python läuft. In einen eigenen Ordner legen, starten, fertig. Die `rueckmeldung.json` (siehe unten) gehört neben die EXE.
+
+Die EXE öffnet vorerst ein Konsolenfenster. Solange es offen ist, läuft das Werkzeug, Schließen beendet es. Windows SmartScreen und manche Virenscanner warnen beim ersten Start vor einem unbekannten Herausgeber, weil die EXE nicht signiert ist. Wer dem nicht trauen mag, startet aus dem Quellcode (Schnellstart).
+
 ## Schnellstart
 
-Voraussetzung: Windows, Python 3.11+ mit Tkinter, dazu Pillow.
+Aus dem Quellcode. Voraussetzung: Windows, Python 3.11+ mit Tkinter, dazu Pillow.
 
 ```bash
 python -m pip install -r requirements.txt
@@ -22,7 +28,7 @@ Ohne `rueckmeldung.json` gelten Strg+Alt+F und `~/Rueckmeldungen`, und alles lan
 
 ## Projekte zuordnen
 
-`rueckmeldung.json` neben `rueckmeldung.py` (Vorlage: [rueckmeldung.beispiel.json](rueckmeldung.beispiel.json)) sagt, welches Fenster zu welchem Projekt gehört:
+`rueckmeldung.json` neben `rueckmeldung.py` bzw. `Rueckmeldung.exe` (Vorlage: [rueckmeldung.beispiel.json](rueckmeldung.beispiel.json)) sagt, welches Fenster zu welchem Projekt gehört:
 
 ```json
 {
@@ -67,7 +73,7 @@ Im Erfassungsfenster:
 
 Beim Zuschneiden gilt der zuletzt gezogene Ausschnitt, außerhalb davon ist das Bild abgedunkelt. Markierungen werden erst beim Speichern in voller Auflösung ins Bild eingebrannt, danach wird zugeschnitten. Geschwärztes ist danach wirklich weg, die ungeschwärzte Aufnahme liegt nie auf der Platte.
 
-Beenden vorerst mit Strg+C in der Konsole.
+Beenden vorerst mit Strg+C in der Konsole oder durch Schließen des Konsolenfensters.
 
 ## Was gespeichert wird
 
@@ -102,13 +108,15 @@ Der Knopf unten rechts fehlt, sobald das Fenster schmal ist.
 
 ## Stand
 
-Schritte 1, 2 und (größtenteils) 3 von 5, siehe [KONZEPT.md](KONZEPT.md): Kürzel, Aufnahme, Notiz, Speichern, Projekte zuordnen, Markieren und Zoomen. Als Nächstes kommen `liste`/`erledigt` zum Einordnen und eine EXE.
+Version 0.1.0, Schritte 1, 2 und (größtenteils) 3 von 5, siehe [KONZEPT.md](KONZEPT.md) und [CHANGELOG.md](CHANGELOG.md): Kürzel, Aufnahme, Notiz, Speichern, Projekte zuordnen, Markieren, Zuschneiden und Zoomen, als EXE ohne Python. Als Nächstes kommen `liste`/`erledigt` zum Einordnen und ein Fenster zum Beenden.
 
 ## Entwicklung
 
 ```bash
 python -m unittest discover -s tests -t .
 python -m ruff check .
+python -m pip install -r requirements-build.txt   # einmalig, für die EXE
+python build_exe.py                              # baut dist/Rueckmeldung.exe und prüft ihren Inhalt
 ```
 
 `rueckmeldung_kern.py` enthält die Logik ohne Fenster (nur Standardbibliothek, schnell getestet), `rueckmeldung_windows.py` die Windows-Aufrufe (Kürzel, Aufnahme, Fokus), `rueckmeldung_bild.py` das Einbrennen der Markierungen (Pillow), `rueckmeldung.py` die Fenster. `rauchtest.py` spielt den ganzen Ablauf ohne echte Eingaben durch.

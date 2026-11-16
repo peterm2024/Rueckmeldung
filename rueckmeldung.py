@@ -10,7 +10,8 @@ Arbeitssitzung liest sie von dort.
 Ohne rueckmeldung.json: Kürzel Strg+Alt+F, Ablage ~/Rueckmeldungen, alles nach „Unbekannt“. Vorlage:
 rueckmeldung.beispiel.json.
 
-Beenden (bis es ein eigenes Fenster dafür gibt): Strg+C in der Konsole bzw. die Konsole schließen.
+Beenden (bis es ein eigenes Fenster dafür gibt): Strg+C in der Konsole bzw. die Konsole schließen. Die EXE
+(build_exe.py) läuft deshalb vorerst mit Konsolenfenster.
 Nichts verlässt den Rechner - kein Netzwerkzugriff.
 """
 import argparse
@@ -444,6 +445,7 @@ def main(argv=None):
     p.add_argument("--konfig", default=None, help=f"Konfigurationsdatei (Standard {kern.KONFIG_DATEI} neben dem Programm)")
     p.add_argument("--ablage", default=None, help=f"Ablage-Ordner (überschreibt die Konfiguration, Standard {kern.STANDARD_ABLAGE})")
     p.add_argument("--kuerzel", default=None, help=f"Tastenkürzel (überschreibt die Konfiguration, Standard {kern.STANDARD_KUERZEL})")
+    p.add_argument("--version", action="version", version=f"Rückmeldung {kern.VERSION}")
     args = p.parse_args(argv)
     win.dpi_bewusst()
     root = tk.Tk()
@@ -465,7 +467,7 @@ def main(argv=None):
         root.destroy()
         return 1
     projekte = ", ".join(x["name"] for x in konfig["projekte"]) or "keine (alles nach Unbekannt)"
-    print(f"Rückmeldung läuft: {kern.zeige_kuerzel(konfig['kuerzel'])} hält das aktive Fenster fest, "
+    print(f"Rückmeldung {kern.VERSION} läuft: {kern.zeige_kuerzel(konfig['kuerzel'])} hält das aktive Fenster fest, "
           f"Ablage {konfig['ablage']}, Projekte: {projekte}. Beenden mit Strg+C.", flush=True)
     try:
         root.mainloop()

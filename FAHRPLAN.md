@@ -36,7 +36,10 @@
 
 ## Schritt 5 – Weitergabe
 
-- [ ] Fenster „läuft“ beim zweiten Start (Ordner öffnen, Beenden), EXE, Autostart, erster Release
+- [x] EXE mit PyInstaller (`build_exe.py` baut und prüft den Inhalt), vorerst mit Konsolenfenster zum Beenden; Version im Kern, CHANGELOG (2026-11-16)
+- [x] Erster Release v0.1.0 auf GitHub, auf Peters Wunsch vorgezogen (2026-11-16)
+- [ ] Fenster „läuft“ beim zweiten Start (Ordner öffnen, Beenden), danach EXE ohne Konsole
+- [ ] Autostart
 - **Meilenstein: Läuft auf dem Tester-PC ohne Python.**
 
 ## Offen (Peter entscheidet)
