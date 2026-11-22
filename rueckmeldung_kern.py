@@ -13,7 +13,7 @@ import math
 import os
 import re
 
-VERSION = "0.2.0"   # bei jedem Release mit CHANGELOG.md abgleichen, danach "+dev" anhängen
+VERSION = "0.2.0+dev"   # bei jedem Release mit CHANGELOG.md abgleichen, danach "+dev" anhängen
 
 ARTEN = ("Fehler", "Idee", "Notiz")
 PROJEKT_UNBEKANNT = "Unbekannt"
