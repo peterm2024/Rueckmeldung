@@ -8,7 +8,7 @@ Nichts verlässt den Rechner: Das Werkzeug greift nicht aufs Netz zu.
 
 ## Download
 
-Unter [Releases](https://github.com/peterm2024/Rueckmeldung/releases) liegt `Rueckmeldung.exe`, eine einzelne Datei, die ohne Python läuft. In einen eigenen Ordner legen, starten, fertig. Die `rueckmeldung.json` (siehe unten) gehört neben die EXE.
+Unter [Releases](https://github.com/peterm2024/Rueckmeldung/releases) liegt `Rueckmeldung.exe`, eine einzelne Datei, die ohne Python läuft. In einen eigenen Ordner legen, starten, fertig. Die `rueckmeldung.json` (siehe unten) liegt neben der EXE oder in `~/Rueckmeldungen/`.
 
 Die EXE öffnet vorerst ein Konsolenfenster. Solange es offen ist, läuft das Werkzeug, Schließen beendet es. Windows SmartScreen und manche Virenscanner warnen beim ersten Start vor einem unbekannten Herausgeber, weil die EXE nicht signiert ist. Wer dem nicht trauen mag, startet aus dem Quellcode (Schnellstart).
 
@@ -28,7 +28,7 @@ Ohne `rueckmeldung.json` gelten Strg+Alt+F und `~/Rueckmeldungen`, und alles lan
 
 ## Projekte zuordnen
 
-`rueckmeldung.json` neben `rueckmeldung.py` bzw. `Rueckmeldung.exe` (Vorlage: [rueckmeldung.beispiel.json](rueckmeldung.beispiel.json)) sagt, welches Fenster zu welchem Projekt gehört:
+`rueckmeldung.json` (Vorlage: [rueckmeldung.beispiel.json](rueckmeldung.beispiel.json)) sagt, welches Fenster zu welchem Projekt gehört. Gesucht wird sie zuerst neben `rueckmeldung.py` bzw. `Rueckmeldung.exe`, dann in der Ablage `~/Rueckmeldungen/`. Die Startzeile nennt die gefundene Datei. Wird keine gefunden, steht das dort und im Erfassungsfenster („ohne rueckmeldung.json“).
 
 ```json
 {
@@ -52,7 +52,7 @@ Ohne `rueckmeldung.json` gelten Strg+Alt+F und `~/Rueckmeldungen`, und alles lan
 
 - **Regeln:** Das erste Projekt mit einer passenden Regel gewinnt. Eine Regel passt, wenn alle ihre Angaben passen: `programm` ist der Dateiname des Programms, `fenstertitel` ein regulärer Ausdruck. Er darf auch auf ein anderes Fenster desselben Programms passen, so landet ein Dialog wie „Einstellungen“ beim Projekt seines Hauptfensters.
 - **version:** regulärer Ausdruck mit einer Gruppe, angewandt auf die Fenstertitel des Programms.
-- **bild_fuer_ki:** Vorgabe für den Schalter „Bild für KI freigeben“ (siehe unten).
+- **bild_fuer_ki:** Vorgabe für den Schalter „Bild für KI freigeben“ (siehe unten). Ohne Angabe ist er gesetzt, `false` schaltet ihn für Projekte ab, deren Bilder echte Daten zeigen.
 - **protokoll:** Die letzten Zeilen der neuesten passenden Datei kommen auf Wunsch als `…_protokoll.txt` dazu. `vorgabe` sagt, ob der Schalter dafür anfangs gesetzt ist.
 - **rechner:** freies Kürzel für den Kopf der Rückmeldung (statt des echten Rechnernamens).
 - Schlüssel, die mit `_` beginnen, sind Kommentare. Alles andere Unbekannte meldet das Werkzeug beim Start als Fehler, damit Tippfehler nicht still wirkungslos bleiben.
@@ -70,6 +70,7 @@ Im Erfassungsfenster:
 | Mausrad | Zoom um die Mausposition |
 | rechte oder mittlere Maustaste ziehen | Ausschnitt verschieben |
 | Strg+Z (nach Klick ins Bild) | letzte Markierung zurücknehmen |
+| Knopf „Ablage öffnen“ | Explorer im Ordner des Projekts: bisherige Rückmeldungen ansehen, die `.md` mit jedem Editor nachbearbeiten |
 
 Beim Zuschneiden gilt der zuletzt gezogene Ausschnitt, außerhalb davon ist das Bild abgedunkelt. Markierungen werden erst beim Speichern in voller Auflösung ins Bild eingebrannt, danach wird zugeschnitten. Geschwärztes ist danach wirklich weg, die ungeschwärzte Aufnahme liegt nie auf der Platte.
 
@@ -108,7 +109,7 @@ Der Knopf unten rechts fehlt, sobald das Fenster schmal ist.
 
 ## Stand
 
-Version 0.1.0, Schritte 1, 2 und (größtenteils) 3 von 5, siehe [KONZEPT.md](KONZEPT.md) und [CHANGELOG.md](CHANGELOG.md): Kürzel, Aufnahme, Notiz, Speichern, Projekte zuordnen, Markieren, Zuschneiden und Zoomen, als EXE ohne Python. Als Nächstes kommen `liste`/`erledigt` zum Einordnen und ein Fenster zum Beenden.
+Version 0.2.0, Schritte 1, 2 und (größtenteils) 3 von 5, siehe [KONZEPT.md](KONZEPT.md) und [CHANGELOG.md](CHANGELOG.md): Kürzel, Aufnahme, Notiz, Speichern, Projekte zuordnen, Markieren, Zuschneiden und Zoomen, als EXE ohne Python. Als Nächstes kommen `liste`/`erledigt` zum Einordnen und ein Fenster zum Beenden.
 
 ## Entwicklung
 

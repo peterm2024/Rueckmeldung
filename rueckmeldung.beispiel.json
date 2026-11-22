@@ -1,5 +1,5 @@
 {
-  "_hinweis": "Vorlage: als rueckmeldung.json neben rueckmeldung.py (bzw. der EXE) speichern und anpassen. Schlüssel mit _ am Anfang sind Kommentare.",
+  "_hinweis": "Vorlage: als rueckmeldung.json neben rueckmeldung.py (bzw. der EXE) oder in ~/Rueckmeldungen speichern und anpassen. bild_fuer_ki ist ohne Angabe true. Schlüssel mit _ am Anfang sind Kommentare.",
   "kuerzel": "ctrl+alt+f",
   "ablage": "~/Rueckmeldungen",
   "rechner": "Entwickler-PC",

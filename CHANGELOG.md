@@ -7,6 +7,15 @@ Warum steht in `FAHRPLAN.md` und `KONZEPT.md`.
 
 - (noch nichts)
 
+## 0.2.0 - 2026-11-23
+
+Funde aus der ersten Nutzung.
+
+- `rueckmeldung.json` wird auch in der Ablage (`~/Rueckmeldungen/`) gesucht, nicht nur neben dem Programm. So findet eine EXE in „Downloads“ die Einstellungen. Fehlt die Datei, sagen das die Startzeile und das Erfassungsfenster („ohne rueckmeldung.json“), statt still alles nach „Unbekannt“ zu legen.
+- „Bild für KI freigeben“ ist standardmäßig angehakt. Ein Projekt schaltet das mit `"bild_fuer_ki": false` ab.
+- Knopf „Ablage öffnen“ im Erfassungsfenster: Explorer im Ordner des gewählten Projekts.
+- `--konfig` mit einer Datei, die es nicht gibt, ist ein Fehler.
+
 ## 0.1.0 - 2026-11-16
 
 Erster Release, als `Rueckmeldung.exe` ohne Python lauffähig.

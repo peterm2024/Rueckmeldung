@@ -141,13 +141,15 @@ try:
           "| geschwärzt:", gespeichert.getpixel((330, 40)) == (0, 0, 0),
           "| zurückgenommen fehlt:", gespeichert.getpixel((115, 91)) == (255, 0, 255))
 
-    # Zweite Rückmeldung: Projekt von Hand auf „Unbekannt“ -> keine Version, kein Protokoll, Bild nicht für KI
+    # Zweite Rückmeldung: Projekt von Hand auf „Unbekannt“ -> keine Version, kein Protokoll; Bild für KI ist
+    # vorgegeben (seit 2026-11-22) und wird hier von Hand abgewählt
     app.ausgeloest(ziel_hwnd)
     f = app.fenster
     f.projektname.set(kern.PROJEKT_UNBEKANNT)
     f._projekt_gewaehlt()
-    print("Von Hand Unbekannt - Bild für KI aus:", f.bild_ki.get() is False,
+    print("Von Hand Unbekannt - Bild für KI vorgegeben:", f.bild_ki.get() is True,
           "| Protokoll gesperrt:", str(f._protokoll_knopf.cget("state")) == "disabled")
+    f.bild_ki.set(False)
     f.notiz.insert("1.0", "zweite")
     f.event_generate("<Control-Return>")
     pumpe(0.3)

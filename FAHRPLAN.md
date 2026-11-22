@@ -42,9 +42,17 @@
 - [ ] Autostart
 - **Meilenstein: Läuft auf dem Tester-PC ohne Python.**
 
+## Funde aus der Nutzung (Peter 22.11.2026, sechs Rückmeldungen zu KID)
+
+- [x] **Alles landete in „Unbekannt“:** Peter startete `Downloads\Rueckmeldung.exe`, die `rueckmeldung.json` lag aber nur im Projektordner - die EXE suchte sie nur neben sich und fiel still auf die Vorgaben zurück. Jetzt: erst neben dem Programm, dann in `~/Rueckmeldungen/rueckmeldung.json`; die Startzeile nennt die gefundene Datei bzw. die durchsuchten Orte, das Erfassungsfenster zeigt „ohne rueckmeldung.json“; ein fehlendes `--konfig` ist ein Fehler. Peters Konfiguration liegt seither in der Ablage (2026-11-22)
+- [x] **„Bild für die KI“ standardmäßig angehakt** (Peter: „die habe ich nur übersehen anzuhaken. Wir sollten den Haken defaultmäßig angehakt machen“): gesetzt, solange ein Projekt nicht `"bild_fuer_ki": false` sagt, auch bei Unbekannt; in Peters Konfiguration für KID auf `true`; F4 damit entschieden (2026-11-22)
+- [x] **„Wie kann ich bestehende Rückmeldungen bearbeiten? Wo finde ich die Rückmeldungen?“** Knopf „Ablage öffnen“ im Erfassungsfenster (Explorer im Ordner des gewählten Projekts, die .md lassen sich mit jedem Editor bearbeiten) (2026-11-22). Nachbearbeiten im Werkzeug selbst kommt mit Schritt 4.
+- [x] Abnahme durch Peter (2026-11-23): „passt“, veröffentlicht als v0.2.0
+- Die KID-Sitzung hat die sechs KID-Funde bereits von Hand nach `KID/erledigt/` gelegt, mit `status: "erledigt"` und `vermerk` (Commit, Testpunkt) - Vorbild für `erledigt` in Schritt 4.
+
 ## Offen (Peter entscheidet)
 
-- F1 Name („Rückmeldung“ ist Arbeitsname), F2 Kürzel (Strg+Alt+F, Kollision mit LabVIEW/Spielen?), F3 Ablageort zu Hause (Vorschlag `~/Rueckmeldungen`), F4 Bilder und KI (Vorschlag: je Projekt, bei KID „nein“). Bis zur Antwort gelten die Vorschläge.
+- F1 Name („Rückmeldung“ ist Arbeitsname), F2 Kürzel (Strg+Alt+F, Kollision mit LabVIEW/Spielen?), F3 Ablageort zu Hause (Vorschlag `~/Rueckmeldungen`), F4 Bilder und KI: entschieden 2026-11-22, Haken standardmäßig gesetzt, ein Projekt kann ihn abschalten. Bis zur Antwort gelten die Vorschläge.
 
 ## Ideen (noch nicht entschieden)
 

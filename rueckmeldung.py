@@ -7,7 +7,8 @@ Arbeitssitzung liest sie von dort.
     python rueckmeldung.py --ablage D:/Rueck     andere Ablage
     python rueckmeldung.py --kuerzel ctrl+alt+r  anderes Kürzel
 
-Ohne rueckmeldung.json: Kürzel Strg+Alt+F, Ablage ~/Rueckmeldungen, alles nach „Unbekannt“. Vorlage:
+rueckmeldung.json wird neben dem Programm gesucht, dann in ~/Rueckmeldungen. Ohne sie: Kürzel Strg+Alt+F, Ablage
+~/Rueckmeldungen, alles nach „Unbekannt“ (Startzeile und Erfassungsfenster sagen das). Vorlage:
 rueckmeldung.beispiel.json.
 
 Beenden (bis es ein eigenes Fenster dafür gibt): Strg+C in der Konsole bzw. die Konsole schließen. Die EXE
@@ -36,6 +37,7 @@ class App:
         self.fenster = None
         self.kuerzel = None
         self.gespeichert = []                    # Pfade dieser Sitzung (für Tests und die Konsolenmeldung)
+        self.ohne_konfig = False                 # keine rueckmeldung.json gefunden - das Fenster sagt es dann
 
     @property
     def projektnamen(self):
@@ -148,6 +150,7 @@ class Erfassung(tk.Toplevel):
         knoepfe.pack(side=tk.BOTTOM, fill=tk.X, pady=(px(8), 0))
         ttk.Button(knoepfe, text="Verwerfen (Esc)", command=self.verwerfen).pack(side=tk.RIGHT)
         ttk.Button(knoepfe, text="Speichern (Strg+Enter)", command=self.speichern).pack(side=tk.RIGHT, padx=px(6))
+        ttk.Button(knoepfe, text="Ablage öffnen", command=self.ablage_oeffnen).pack(side=tk.RIGHT, padx=(0, px(6)))
         self.bild_ki = tk.BooleanVar()
         self.mit_protokoll = tk.BooleanVar()
         self._ki_knopf = ttk.Checkbutton(knoepfe, text="Bild für KI freigeben", variable=self.bild_ki)
@@ -209,12 +212,12 @@ class Erfassung(tk.Toplevel):
         """Vorgaben des gewählten Projekts übernehmen: Version, Bild für die KI, Protokoll anhängen."""
         p = self.app.projekt(self.projektname.get())
         version = kern.finde_version(p, self.moment["titel_liste"])
-        angaben = [f"Version {version}" if version else "", self.moment["bildschirm"]]
+        angaben = [f"Version {version}" if version else "", self.moment["bildschirm"],
+                   "ohne rueckmeldung.json" if self.app.ohne_konfig else ""]
         self._angaben.configure(text="   ·   ".join(a for a in angaben if a))
-        p = p or {}
-        self.bild_ki.set(bool(p.get("bild_fuer_ki")) and self.moment["bild"] is not None)
+        self.bild_ki.set(kern.bild_fuer_ki_vorgabe(p) and self.moment["bild"] is not None)
         self._ki_knopf.configure(state=tk.NORMAL if self.moment["bild"] is not None else tk.DISABLED)
-        pr = p.get("protokoll")
+        pr = (p or {}).get("protokoll")
         if pr:
             self.mit_protokoll.set(bool(pr.get("vorgabe")))
             self._protokoll_knopf.configure(text=f"Protokoll anhängen (letzte {pr.get('zeilen', 40)} Zeilen)",
@@ -254,6 +257,18 @@ class Erfassung(tk.Toplevel):
             messagebox.showerror("Rückmeldung", f"Speichern fehlgeschlagen:\n{e}", parent=self)
             return
         self.schliessen()
+
+    def ablage_oeffnen(self):
+        """Explorer im Ordner des gewählten Projekts (gibt es ihn noch nicht: die Ablage). Dort liegen die
+        bisherigen Rückmeldungen, die .md-Dateien lassen sich mit jedem Editor nachbearbeiten."""
+        ablage = os.path.expanduser(self.app.konfig["ablage"])
+        ordner = kern.projektordner(ablage, self.projektname.get())
+        ziel = ordner if os.path.isdir(ordner) else ablage
+        try:
+            os.makedirs(ziel, exist_ok=True)
+            os.startfile(ziel)
+        except OSError as e:
+            messagebox.showerror("Rückmeldung", f"Ablage lässt sich nicht öffnen:\n{e}", parent=self)
 
     def verwerfen(self):
         gemacht = self.notiz.get("1.0", tk.END).strip() or (self.editor is not None and self.editor.markierungen)
@@ -434,15 +449,15 @@ class BildEditor(ttk.Frame):
         return rueckmeldung_bild.einbrennen(self.bild, self.markierungen)
 
 
-def konfig_pfad():
-    """rueckmeldung.json neben dem Programm (bei der EXE neben der EXE)."""
-    ordner = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
-    return os.path.join(ordner, kern.KONFIG_DATEI)
+def programm_ordner():
+    """Ordner von rueckmeldung.py, bei der EXE der Ordner der EXE."""
+    return os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
 
 
 def main(argv=None):
     p = argparse.ArgumentParser(description="Rückmeldung per Tastenkürzel festhalten")
-    p.add_argument("--konfig", default=None, help=f"Konfigurationsdatei (Standard {kern.KONFIG_DATEI} neben dem Programm)")
+    p.add_argument("--konfig", default=None, help=f"Konfigurationsdatei (Standard {kern.KONFIG_DATEI} neben dem Programm, "
+                                                 f"sonst in {kern.STANDARD_ABLAGE})")
     p.add_argument("--ablage", default=None, help=f"Ablage-Ordner (überschreibt die Konfiguration, Standard {kern.STANDARD_ABLAGE})")
     p.add_argument("--kuerzel", default=None, help=f"Tastenkürzel (überschreibt die Konfiguration, Standard {kern.STANDARD_KUERZEL})")
     p.add_argument("--version", action="version", version=f"Rückmeldung {kern.VERSION}")
@@ -450,25 +465,36 @@ def main(argv=None):
     win.dpi_bewusst()
     root = tk.Tk()
     root.withdraw()
-    pfad = args.konfig or konfig_pfad()
+    orte = [args.konfig] if args.konfig else kern.konfig_orte(programm_ordner())
+    pfad = kern.finde_konfig(orte)
+    if args.konfig and pfad is None:
+        messagebox.showerror("Rückmeldung", f"Konfiguration nicht gefunden:\n{args.konfig}")
+        root.destroy()
+        return 1
     try:
-        konfig = kern.lade_konfig(pfad)
+        konfig = kern.lade_konfig(pfad) if pfad else kern.pruefe_konfig({})
         if args.ablage:
             konfig["ablage"] = args.ablage
         if args.kuerzel:
             kern.lies_kuerzel(args.kuerzel)
             konfig["kuerzel"] = args.kuerzel
     except (kern.Konfigfehler, kern.Kuerzelfehler) as e:
-        messagebox.showerror("Rückmeldung", f"Konfiguration nicht lesbar:\n{e}\n\n{pfad}")
+        messagebox.showerror("Rückmeldung", f"Konfiguration nicht lesbar:\n{e}\n\n{pfad or '(Kommandozeile)'}")
         root.destroy()
         return 1
     app = App(root, konfig)
+    app.ohne_konfig = pfad is None
     if not app.starte():
         root.destroy()
         return 1
     projekte = ", ".join(x["name"] for x in konfig["projekte"]) or "keine (alles nach Unbekannt)"
     print(f"Rückmeldung {kern.VERSION} läuft: {kern.zeige_kuerzel(konfig['kuerzel'])} hält das aktive Fenster fest, "
           f"Ablage {konfig['ablage']}, Projekte: {projekte}. Beenden mit Strg+C.", flush=True)
+    if pfad:
+        print(f"Einstellungen aus {pfad}", flush=True)
+    else:
+        print(f"Keine {kern.KONFIG_DATEI} gefunden, gesucht in: {', '.join(orte)}. Alles landet unter "
+              f"{kern.PROJEKT_UNBEKANNT}. Vorlage: rueckmeldung.beispiel.json.", flush=True)
     try:
         root.mainloop()
     except KeyboardInterrupt:

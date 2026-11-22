@@ -13,7 +13,7 @@ import math
 import os
 import re
 
-VERSION = "0.1.0+dev"   # bei jedem Release mit CHANGELOG.md abgleichen, danach "+dev" anhängen
+VERSION = "0.2.0"   # bei jedem Release mit CHANGELOG.md abgleichen, danach "+dev" anhängen
 
 ARTEN = ("Fehler", "Idee", "Notiz")
 PROJEKT_UNBEKANNT = "Unbekannt"
@@ -89,6 +89,11 @@ def kopf_text(felder):
     return "\n".join(zeilen) + "\n"
 
 
+def projektordner(ablage, projekt):
+    """Ordner, in dem die Rückmeldungen eines Projekts liegen (~ erlaubt)."""
+    return os.path.join(os.path.expanduser(ablage), ordnername(projekt))
+
+
 def speichere(ablage, projekt, jetzt, art, notiz, bilder=(), felder=None, protokoll=None):
     """Rückmeldung schreiben. bilder = PNG-Bytes, felder = weitere Kopfangaben (Fenster, Programm ...),
     protokoll = Text, der als „…_protokoll.txt“ daneben gelegt wird.
@@ -97,7 +102,7 @@ def speichere(ablage, projekt, jetzt, art, notiz, bilder=(), felder=None, protok
     Markdown-Datei ohne ihre Bilder hinterlässt. Gibt den Pfad der Markdown-Datei zurück."""
     if art not in ARTEN:
         raise ValueError(f"Unbekannte Art: {art}")
-    ordner = os.path.join(os.path.expanduser(ablage), ordnername(projekt))
+    ordner = projektordner(ablage, projekt)
     os.makedirs(ordner, exist_ok=True)
     stamm = dateistamm(ordner, jetzt, art)
     namen = []
@@ -344,6 +349,28 @@ def lade_konfig(pfad):
     except ValueError as e:
         raise Konfigfehler(f"{os.path.basename(pfad)} ist kein gültiges JSON: {e}") from None
     return pruefe_konfig(daten)
+
+
+def konfig_orte(programm_ordner):
+    """Wo rueckmeldung.json gesucht wird, in dieser Reihenfolge: neben dem Programm, dann in der Standard-Ablage.
+    So findet auch eine EXE, die aus „Downloads“ gestartet wird, die Einstellungen (Fund 2026-11-22)."""
+    orte = [os.path.normpath(os.path.join(programm_ordner, KONFIG_DATEI)),
+            os.path.normpath(os.path.join(os.path.expanduser(STANDARD_ABLAGE), KONFIG_DATEI))]
+    eindeutig = {}
+    for o in orte:
+        eindeutig.setdefault(os.path.normcase(os.path.abspath(o)), o)
+    return list(eindeutig.values())
+
+
+def finde_konfig(orte):
+    """Erster Ort, an dem die Datei liegt, sonst None (dann gelten die Vorgaben, und das wird angezeigt)."""
+    return next((o for o in orte if os.path.isfile(o)), None)
+
+
+def bild_fuer_ki_vorgabe(projekt):
+    """Anfangswert des Schalters „Bild für KI freigeben“: gesetzt, solange das Projekt ihn nicht mit
+    "bild_fuer_ki": false abschaltet. Peter 2026-11-22: Ein leerer Haken wird beim Festhalten übersehen."""
+    return projekt.get("bild_fuer_ki", True) if projekt else True
 
 
 def ordne_zu(konfig, programm, titel):

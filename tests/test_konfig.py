@@ -58,6 +58,45 @@ class TestKonfig(unittest.TestCase):
                 kern.lade_konfig(pfad)
 
 
+class TestKonfigSuche(unittest.TestCase):
+    """Fund 2026-11-22: Die EXE lief aus „Downloads“, die Konfiguration lag woanders - alles ging nach Unbekannt."""
+
+    def test_reihenfolge_programm_dann_ablage(self):
+        orte = kern.konfig_orte(os.path.join("X:", os.sep, "Downloads"))
+        self.assertEqual(orte[0], os.path.join("X:", os.sep, "Downloads", kern.KONFIG_DATEI))
+        self.assertEqual(orte[1], os.path.normpath(os.path.join(os.path.expanduser(kern.STANDARD_ABLAGE),
+                                                                kern.KONFIG_DATEI)))
+        self.assertNotIn("/", orte[1])                                           # keine gemischten Trenner
+
+    def test_programm_in_der_ablage_nur_einmal(self):
+        ablage = os.path.expanduser(kern.STANDARD_ABLAGE)
+        self.assertEqual(len(kern.konfig_orte(ablage)), 1)
+        self.assertEqual(len(kern.konfig_orte(ablage.upper())), 1)               # Windows: Groß/klein egal
+
+    def test_erster_vorhandener_gewinnt(self):
+        with tempfile.TemporaryDirectory() as d:
+            a, b = os.path.join(d, "a.json"), os.path.join(d, "b.json")
+            self.assertIsNone(kern.finde_konfig([a, b]))
+            open(b, "w").close()
+            self.assertEqual(kern.finde_konfig([a, b]), b)
+            open(a, "w").close()
+            self.assertEqual(kern.finde_konfig([a, b]), a)
+            self.assertIsNone(kern.finde_konfig([d]))                            # ein Ordner zählt nicht
+
+
+class TestBildFuerKiVorgabe(unittest.TestCase):
+    def test_ohne_angabe_gesetzt(self):
+        self.assertTrue(kern.bild_fuer_ki_vorgabe(None))                         # Unbekannt
+        self.assertTrue(kern.bild_fuer_ki_vorgabe(KID))                          # Projekt ohne Angabe
+
+    def test_projekt_schaltet_ab(self):
+        self.assertFalse(kern.bild_fuer_ki_vorgabe(dict(KID, bild_fuer_ki=False)))
+        self.assertTrue(kern.bild_fuer_ki_vorgabe(dict(KID, bild_fuer_ki=True)))
+
+    def test_projektordner(self):
+        self.assertEqual(kern.projektordner("~/R", "KID"), os.path.join(os.path.expanduser("~/R"), "KID"))
+
+
 class TestZuordnung(unittest.TestCase):
     def setUp(self):
         self.k = kern.pruefe_konfig({"projekte": [WIZARD, KID]})
